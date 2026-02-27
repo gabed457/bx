@@ -43,30 +43,28 @@ build_xh_cmd() {
     shift
   done
 
-  local -a cmd=()
+  _BX_CMD=()
   if [[ "$raw" == "true" ]]; then
-    cmd=(xh --body "$method" "$url")
+    _BX_CMD=(xh --body "$method" "$url")
   else
-    cmd=(xh --print=hHbB "$method" "$url")
+    _BX_CMD=(xh --print=hHbB "$method" "$url")
   fi
 
   for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
-    cmd+=("${h%%:*}:${h#*: }")
+    _BX_CMD+=("${h%%:*}:${h#*: }")
   done
   if [[ -n "$bearer" ]]; then
-    cmd+=("Authorization:Bearer ${bearer}")
+    _BX_CMD+=("Authorization:Bearer ${bearer}")
   fi
   if [[ -n "$basic_user" ]]; then
-    cmd+=(--auth "${basic_user}:${basic_pass}")
+    _BX_CMD+=(--auth "${basic_user}:${basic_pass}")
   fi
   if [[ -n "$body" ]]; then
-    cmd+=(--raw "$body")
+    _BX_CMD+=(--raw "$body")
   fi
   for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
-    cmd+=("$f")
+    _BX_CMD+=("$f")
   done
-
-  printf '%s\0' "${cmd[@]}"
 }
 
 build_curlie_cmd() {
@@ -87,30 +85,28 @@ build_curlie_cmd() {
     shift
   done
 
-  local -a cmd=()
+  _BX_CMD=()
   if [[ "$raw" == "true" ]]; then
-    cmd=(curlie -s -X "$method" "$url")
+    _BX_CMD=(curlie -s -X "$method" "$url")
   else
-    cmd=(curlie -X "$method" "$url")
+    _BX_CMD=(curlie -X "$method" "$url")
   fi
 
   for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
-    cmd+=(-H "$h")
+    _BX_CMD+=(-H "$h")
   done
   if [[ -n "$bearer" ]]; then
-    cmd+=(-H "Authorization: Bearer ${bearer}")
+    _BX_CMD+=(-H "Authorization: Bearer ${bearer}")
   fi
   if [[ -n "$basic_user" ]]; then
-    cmd+=(-u "${basic_user}:${basic_pass}")
+    _BX_CMD+=(-u "${basic_user}:${basic_pass}")
   fi
   if [[ -n "$body" ]]; then
-    cmd+=(-d "$body")
+    _BX_CMD+=(-d "$body")
   fi
   for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
-    cmd+=(--data-urlencode "$f")
+    _BX_CMD+=(--data-urlencode "$f")
   done
-
-  printf '%s\0' "${cmd[@]}"
 }
 
 build_curl_cmd() {
@@ -131,30 +127,28 @@ build_curl_cmd() {
     shift
   done
 
-  local -a cmd=()
+  _BX_CMD=()
   if [[ "$raw" == "true" ]]; then
-    cmd=(curl -s -X "$method" "$url")
+    _BX_CMD=(curl -s -X "$method" "$url")
   else
-    cmd=(curl -s -i -X "$method" "$url")
+    _BX_CMD=(curl -s -i -X "$method" "$url")
   fi
 
   for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
-    cmd+=(-H "$h")
+    _BX_CMD+=(-H "$h")
   done
   if [[ -n "$bearer" ]]; then
-    cmd+=(-H "Authorization: Bearer ${bearer}")
+    _BX_CMD+=(-H "Authorization: Bearer ${bearer}")
   fi
   if [[ -n "$basic_user" ]]; then
-    cmd+=(-u "${basic_user}:${basic_pass}")
+    _BX_CMD+=(-u "${basic_user}:${basic_pass}")
   fi
   if [[ -n "$body" ]]; then
-    cmd+=(-d "$body")
+    _BX_CMD+=(-d "$body")
   fi
   for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
-    cmd+=(--data-urlencode "$f")
+    _BX_CMD+=(--data-urlencode "$f")
   done
-
-  printf '%s\0' "${cmd[@]}"
 }
 
 execute_request() {
@@ -168,8 +162,9 @@ execute_request() {
 
   # Append query params
   if [[ ${#BX_QUERY_PARAMS[@]} -gt 0 ]]; then
+    # Strip existing query string — params:query block is the source of truth
+    resolved_url="${resolved_url%%\?*}"
     local sep="?"
-    [[ "$resolved_url" == *"?"* ]] && sep="&"
     for qp in "${BX_QUERY_PARAMS[@]}"; do
       local qkey="${qp%%:*}"
       local qval="${qp#*:}"
@@ -286,19 +281,14 @@ execute_request() {
     builder_args+=(--form "$f")
   done
 
-  # Build command array
-  local cmd_str
+  # Build command array (using global _BX_CMD to avoid null-byte loss in command substitution)
+  _BX_CMD=()
   case "$client" in
-    xh)     cmd_str=$(build_xh_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
-    curlie) cmd_str=$(build_curlie_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
-    curl)   cmd_str=$(build_curl_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
+    xh)     build_xh_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}" ;;
+    curlie) build_curlie_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}" ;;
+    curl)   build_curl_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}" ;;
   esac
-
-  # Parse null-delimited string into array
-  local -a cmd=()
-  while IFS= read -r -d '' item; do
-    cmd+=("$item")
-  done <<< "$cmd_str"
+  local -a cmd=("${_BX_CMD[@]}")
 
   # Verbose / dry-run output
   if [[ "$verbose" == "true" || "$dry_run" == "true" ]]; then

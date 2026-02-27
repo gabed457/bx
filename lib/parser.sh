@@ -6,7 +6,8 @@
 #   BX_BODY, BX_BODY_TYPE (json|form|multipart|xml|text|graphql|none),
 #   BX_BODY_FORM[], BX_BODY_GRAPHQL_VARS,
 #   BX_AUTH_TYPE (bearer|basic|none), BX_AUTH_TOKEN,
-#   BX_AUTH_USER, BX_AUTH_PASS
+#   BX_AUTH_USER, BX_AUTH_PASS,
+#   BX_PRE_REQUEST_VARS[]
 
 parse_bru_file() {
   local file="$1"
@@ -24,6 +25,7 @@ parse_bru_file() {
   BX_AUTH_TOKEN=""
   BX_AUTH_USER=""
   BX_AUTH_PASS=""
+  BX_PRE_REQUEST_VARS=()
 
   [[ -f "$file" ]] || die "File not found: $file"
 
@@ -214,6 +216,26 @@ parse_bru_file() {
     BX_AUTH_USER="$basic_user"
     BX_AUTH_PASS="$basic_pass"
   fi
+
+  # Extract vars:pre-request (static key: value pairs)
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && BX_PRE_REQUEST_VARS+=("$line")
+  done < <(echo "$content" | awk '
+    /^vars:pre-request[[:space:]]*\{/ { in_block=1; next }
+    in_block && /^\}/ { exit }
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^~/ || /^\/\//) next
+      idx = index($0, ":")
+      if (idx > 0) {
+        key = substr($0, 1, idx-1)
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        if (val != "") print key "=" val
+      }
+    }
+  ')
 }
 
 # Parse collection.bru for collection-level headers and auth

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 # Resolve lib directory relative to the bx binary, following symlinks
 BX_BIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
@@ -260,11 +260,6 @@ main() {
     done < <(load_environment "$root" "$env_name")
   fi
 
-  # CLI --var overrides (highest priority)
-  for v in "${cli_vars[@]+"${cli_vars[@]}"}"; do
-    env_pairs+=("$v")
-  done
-
   # Parse collection.bru for headers/auth
   # shellcheck disable=SC2034 # consumed by lib/client.sh
   BX_COLLECTION_HEADERS=()
@@ -282,6 +277,16 @@ main() {
 
   # Parse the request
   parse_bru_file "$req_file"
+
+  # Pre-request vars (between env and CLI overrides)
+  for v in "${BX_PRE_REQUEST_VARS[@]+"${BX_PRE_REQUEST_VARS[@]}"}"; do
+    env_pairs+=("$v")
+  done
+
+  # CLI --var overrides (highest priority)
+  for v in "${cli_vars[@]+"${cli_vars[@]}"}"; do
+    env_pairs+=("$v")
+  done
 
   if [[ "$inspect" == "true" ]]; then
     inspect_request "$root" "$request" "${env_pairs[@]+"${env_pairs[@]}"}"
