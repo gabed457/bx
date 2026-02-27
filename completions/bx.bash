@@ -15,20 +15,20 @@ _bx_completions() {
     root=$(_bx_find_root 2>/dev/null)
     if [[ -n "$root" && -d "$root/environments" ]]; then
       envs=$(find "$root/environments" -name '*.bru' -exec basename {} .bru \;)
-      COMPREPLY=($(compgen -W "$envs" -- "$cur"))
+      mapfile -t COMPREPLY < <(compgen -W "$envs" -- "$cur")
     fi
     return
   fi
 
   # After "completion", suggest shells
   if [[ "$prev" == "completion" ]]; then
-    COMPREPLY=($(compgen -W "bash zsh fish" -- "$cur"))
+    mapfile -t COMPREPLY < <(compgen -W "bash zsh fish" -- "$cur")
     return
   fi
 
   # If current word starts with -, complete flags
   if [[ "$cur" == -* ]]; then
-    COMPREPLY=($(compgen -W "$flags" -- "$cur"))
+    mapfile -t COMPREPLY < <(compgen -W "$flags" -- "$cur")
     return
   fi
 
@@ -38,7 +38,7 @@ _bx_completions() {
   if [[ -n "$root" ]]; then
     requests=$(find "$root" -name '*.bru' -not -path '*/environments/*' | sed "s|$root/||;s|\.bru$||")
   fi
-  COMPREPLY=($(compgen -W "$commands $requests" -- "$cur"))
+  mapfile -t COMPREPLY < <(compgen -W "$commands $requests" -- "$cur")
 }
 
 _bx_find_root() {

@@ -289,10 +289,11 @@ execute_request() {
 
   # Verbose / dry-run output
   if [[ "$verbose" == "true" || "$dry_run" == "true" ]]; then
-    print_request "$BX_METHOD" "$resolved_url" \
-      $(for h in "${resolved_headers[@]}"; do echo --header "$h"; done) \
-      ${resolved_bearer:+--bearer "$resolved_bearer"} \
-      ${resolved_body:+--body "$resolved_body"}
+    local -a print_args=()
+    for h in "${resolved_headers[@]}"; do print_args+=(--header "$h"); done
+    [[ -n "$resolved_bearer" ]] && print_args+=(--bearer "$resolved_bearer")
+    [[ -n "$resolved_body" ]] && print_args+=(--body "$resolved_body")
+    print_request "$BX_METHOD" "$resolved_url" "${print_args[@]}"
   fi
 
   if [[ "$dry_run" == "true" ]]; then

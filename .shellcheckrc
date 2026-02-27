@@ -1,4 +1,6 @@
 # Allow "useless cat" for readability in pipelines
 disable=SC2002
+# Variables set in one file and used in another via source
+disable=SC2034
 # Source paths
 source-path=lib/
