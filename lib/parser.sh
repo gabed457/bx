@@ -160,12 +160,16 @@ parse_bru_file() {
   bearer_token=$(echo "$content" | awk '
     /^auth:bearer[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /token:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/token:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   if [[ -n "$bearer_token" ]]; then
@@ -178,23 +182,31 @@ parse_bru_file() {
   basic_user=$(echo "$content" | awk '
     /^auth:basic[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /username:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/username:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   basic_pass=$(echo "$content" | awk '
     /^auth:basic[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /password:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/password:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   if [[ -n "$basic_user" ]]; then
@@ -208,6 +220,13 @@ parse_bru_file() {
 parse_collection_bru() {
   local file="$1"
   [[ -f "$file" ]] || return
+
+  # Reset collection state
+  BX_COLLECTION_HEADERS=()
+  BX_COLLECTION_AUTH_TYPE="none"
+  BX_COLLECTION_AUTH_TOKEN=""
+  BX_COLLECTION_AUTH_USER=""
+  BX_COLLECTION_AUTH_PASS=""
 
   # Parse collection headers
   while IFS= read -r line; do
@@ -227,12 +246,16 @@ parse_collection_bru() {
   coll_bearer=$(tr -d '\r' < "$file" | awk '
     /^auth:bearer[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /token:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/token:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   if [[ -n "$coll_bearer" ]]; then
@@ -245,23 +268,31 @@ parse_collection_bru() {
   coll_user=$(tr -d '\r' < "$file" | awk '
     /^auth:basic[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /username:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/username:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   coll_pass=$(tr -d '\r' < "$file" | awk '
     /^auth:basic[[:space:]]*\{/ { in_block=1; next }
     in_block && /^\}/ { exit }
-    in_block && /password:/ {
-      idx = index($0, ":")
-      val = substr($0, idx+1)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-      print val
-      exit
+    in_block {
+      gsub(/^[[:space:]]+/, "")
+      if ($0 == "" || /^\/\// || /^~/) next
+      if (/password:/) {
+        idx = index($0, ":")
+        val = substr($0, idx+1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+        print val
+        exit
+      }
     }
   ')
   if [[ -n "$coll_user" ]]; then

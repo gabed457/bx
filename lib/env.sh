@@ -40,21 +40,30 @@ resolve_vars() {
   local text="$1"
   shift
 
-  # Build associative array — last value for each key wins
-  local -A var_map=()
-  local -a var_order=()
+  # Build parallel arrays — last value for each key wins (Bash 3.2 compatible)
+  local -a var_keys=() var_vals=()
   for kv in "$@"; do
     local key="${kv%%=*}"
     local val="${kv#*=}"
-    if [[ -z "${var_map[$key]+x}" ]]; then
-      var_order+=("$key")
+    local found=false
+    local i
+    for i in "${!var_keys[@]}"; do
+      if [[ "${var_keys[$i]}" == "$key" ]]; then
+        var_vals[i]="$val"
+        found=true
+        break
+      fi
+    done
+    if [[ "$found" == false ]]; then
+      var_keys+=("$key")
+      var_vals+=("$val")
     fi
-    var_map["$key"]="$val"
   done
 
   # Apply resolved values
-  for key in "${var_order[@]}"; do
-    text="${text//\{\{$key\}\}/${var_map[$key]}}"
+  local i
+  for i in "${!var_keys[@]}"; do
+    text="${text//\{\{${var_keys[$i]}\}\}/${var_vals[$i]}}"
   done
 
   # Warn about unresolved variables

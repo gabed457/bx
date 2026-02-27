@@ -34,7 +34,7 @@ find_request_file() {
 
   # Filename match
   local matches
-  matches=$(find "$root" -name "${name}.bru" -not -path '*/environments/*' 2>/dev/null)
+  matches=$(find "$root" -name "${name}.bru" -not -name 'collection.bru' -not -path '*/environments/*' 2>/dev/null)
   local count
   count=$(echo "$matches" | grep -c '.' 2>/dev/null || true)
 
@@ -54,7 +54,7 @@ find_request_file() {
   fi
 
   # Fuzzy match
-  matches=$(find "$root" -name "*.bru" -not -path '*/environments/*' 2>/dev/null | grep -i "$name" || true)
+  matches=$(find "$root" -name "*.bru" -not -name 'collection.bru' -not -path '*/environments/*' 2>/dev/null | grep -i "$name" || true)
   count=$(echo "$matches" | grep -c '.' 2>/dev/null || true)
 
   if [[ "$count" -eq 1 ]]; then
@@ -78,7 +78,7 @@ list_requests() {
   echo -e "${BOLD}Requests in collection:${RESET}"
   echo ""
 
-  find "$root" -name '*.bru' -not -path '*/environments/*' | sort | while read -r file; do
+  find "$root" -name '*.bru' -not -name 'collection.bru' -not -path '*/environments/*' | sort | while read -r file; do
     local rel="${file#"$root"/}"
     rel="${rel%.bru}"
 

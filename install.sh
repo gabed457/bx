@@ -62,7 +62,12 @@ main() {
   prefix=$(determine_prefix)
   local needs_sudo="false"
 
-  if [[ ! -w "$prefix/bin" ]] && [[ -d "$prefix/bin" ]]; then
+  if [[ -d "$prefix/bin" ]]; then
+    if [[ ! -w "$prefix/bin" ]]; then
+      needs_sudo="true"
+      info "Will need sudo to install to $prefix"
+    fi
+  elif [[ ! -w "$prefix" ]]; then
     needs_sudo="true"
     info "Will need sudo to install to $prefix"
   fi
@@ -77,8 +82,7 @@ main() {
   fi
 
   if [[ -z "$version" ]]; then
-    info "Could not determine latest version, using main branch"
-    version="main"
+    error "Could not determine latest version. Check https://github.com/$REPO/releases"
   fi
 
   info "Installing bx $version to $prefix"
@@ -90,9 +94,6 @@ main() {
 
   # Download and extract
   local tarball_url="https://github.com/$REPO/archive/refs/tags/${version}.tar.gz"
-  if [[ "$version" == "main" ]]; then
-    tarball_url="https://github.com/$REPO/archive/refs/heads/main.tar.gz"
-  fi
 
   info "Downloading $tarball_url..."
   download "$tarball_url" "$tmpdir/bx.tar.gz"

@@ -111,7 +111,7 @@ inspect_request() {
       local token
       token=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]}")
       echo "  Type: Bearer"
-      echo "  Token: ${token:0:20}..."
+      echo "  Token: [REDACTED]"
     elif [[ "$BX_AUTH_TYPE" == "basic" ]]; then
       local user
       user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]}")
@@ -190,6 +190,7 @@ main() {
         inspect="true"
         ;;
       -e|--env)
+        [[ $# -ge 2 ]] || die "Option $1 requires a value"
         env_name="$2"
         shift
         ;;
@@ -205,10 +206,12 @@ main() {
       --xh) force_client="xh" ;;
       --curlie) force_client="curlie" ;;
       -H|--header)
+        [[ $# -ge 2 ]] || die "Option $1 requires a value"
         BX_CLI_HEADERS+=("$2")
         shift
         ;;
       --var)
+        [[ $# -ge 2 ]] || die "Option $1 requires a value"
         cli_vars+=("$2")
         shift
         ;;
@@ -263,10 +266,15 @@ main() {
   done
 
   # Parse collection.bru for headers/auth
+  # shellcheck disable=SC2034 # consumed by lib/client.sh
   BX_COLLECTION_HEADERS=()
+  # shellcheck disable=SC2034
   BX_COLLECTION_AUTH_TYPE="none"
+  # shellcheck disable=SC2034
   BX_COLLECTION_AUTH_TOKEN=""
+  # shellcheck disable=SC2034
   BX_COLLECTION_AUTH_USER=""
+  # shellcheck disable=SC2034
   BX_COLLECTION_AUTH_PASS=""
   if [[ -f "$root/collection.bru" ]]; then
     parse_collection_bru "$root/collection.bru"

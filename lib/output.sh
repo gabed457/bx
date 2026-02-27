@@ -52,7 +52,7 @@ print_request() {
     echo -e "  ${DIM}${h}${RESET}" >&2
   done
   if [[ -n "$bearer" ]]; then
-    echo -e "  ${DIM}Authorization: Bearer ${bearer:0:20}...${RESET}" >&2
+    echo -e "  ${DIM}Authorization: Bearer [REDACTED]${RESET}" >&2
   fi
   if [[ -n "$body" ]]; then
     echo -e "\n${DIM}Body:${RESET}" >&2

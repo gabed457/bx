@@ -203,9 +203,24 @@ execute_request() {
     resolved_basic_pass=$(resolve_vars "${BX_COLLECTION_AUTH_PASS:-}" "${env_vars[@]}")
   fi
 
-  # Resolve headers — merge collection headers with request headers
+  # Resolve headers — merge collection headers with request headers (Bash 3.2 compatible)
   local -a resolved_headers=()
-  local -A header_map=()
+  local -a hdr_keys=() hdr_vals=()
+
+  _merge_header() {
+    local hkey="$1" hval="$2"
+    local hkey_lower
+    hkey_lower=$(echo "$hkey" | tr '[:upper:]' '[:lower:]')
+    local i
+    for i in "${!hdr_keys[@]}"; do
+      if [[ "${hdr_keys[$i]}" == "$hkey_lower" ]]; then
+        hdr_vals[i]="${hkey}: ${hval}"
+        return
+      fi
+    done
+    hdr_keys+=("$hkey_lower")
+    hdr_vals+=("${hkey}: ${hval}")
+  }
 
   # Collection headers first (lower priority)
   if [[ ${#BX_COLLECTION_HEADERS[@]} -gt 0 ]]; then
@@ -214,9 +229,7 @@ execute_request() {
       local hval="${h#*:}"
       hval="${hval#"${hval%%[![:space:]]*}"}"
       hval=$(resolve_vars "$hval" "${env_vars[@]}")
-      local hkey_lower
-      hkey_lower=$(echo "$hkey" | tr '[:upper:]' '[:lower:]')
-      header_map["$hkey_lower"]="${hkey}: ${hval}"
+      _merge_header "$hkey" "$hval"
     done
   fi
 
@@ -226,9 +239,7 @@ execute_request() {
     local hval="${h#*:}"
     hval="${hval#"${hval%%[![:space:]]*}"}"
     hval=$(resolve_vars "$hval" "${env_vars[@]}")
-    local hkey_lower
-    hkey_lower=$(echo "$hkey" | tr '[:upper:]' '[:lower:]')
-    header_map["$hkey_lower"]="${hkey}: ${hval}"
+    _merge_header "$hkey" "$hval"
   done
 
   # CLI --header overrides
@@ -236,13 +247,11 @@ execute_request() {
     local hkey="${h%%:*}"
     local hval="${h#*:}"
     hval="${hval#"${hval%%[![:space:]]*}"}"
-    local hkey_lower
-    hkey_lower=$(echo "$hkey" | tr '[:upper:]' '[:lower:]')
-    header_map["$hkey_lower"]="${hkey}: ${hval}"
+    _merge_header "$hkey" "$hval"
   done
 
-  for key in "${!header_map[@]}"; do
-    resolved_headers+=("${header_map[$key]}")
+  for i in "${!hdr_vals[@]}"; do
+    resolved_headers+=("${hdr_vals[$i]}")
   done
 
   # Resolve form data

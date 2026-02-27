@@ -12,5 +12,9 @@ Thumbs.db
 # Node (for npm wrapper)
 node_modules/
 
+# Environment files
+.env
+.env.*
+
 # Test artifacts
 test/tmp/

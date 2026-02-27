@@ -49,7 +49,7 @@ bx create-order -e staging -v    # Verbose mode shows request details
 
 ## Usage
 
-```
+```text
 bx <request> [options]
 bx <command>
 ```
