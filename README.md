@@ -36,7 +36,7 @@ bx create-order -e staging -v    # Verbose mode shows request details
 ## Features
 
 - Execute any `.bru` request file directly from the terminal
-- Auto-detect and use `xh`, `curlie`, or `curl` as the HTTP client
+- Auto-detect and use `curlie`, `xh`, or `curl` as the HTTP client
 - Environment variable resolution from Bruno environment files
 - Collection-level headers and auth from `collection.bru`
 - Fuzzy request name matching -- type less, do more
@@ -114,7 +114,7 @@ bx get-user -e dev --curl
 |----------|-------------|---------|
 | `BX_COLLECTION` | Path to Bruno collection root | Auto-discovered from current directory |
 | `BX_ENV` | Default environment name | None |
-| `BX_HTTP_CLIENT` | Preferred HTTP client | Auto-detected (`xh` > `curlie` > `curl`) |
+| `BX_HTTP_CLIENT` | Preferred HTTP client | Auto-detected (`curlie` > `xh` > `curl`) |
 | `NO_COLOR` | Disable colored output (any value) | Unset |
 | `BX_DEBUG` | Enable debug output (set to `1`) | Unset |
 

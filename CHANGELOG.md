@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 - Parse and execute .bru request files (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD)
 - Environment variable resolution
-- HTTP client auto-detection (xh → curlie → curl)
+- HTTP client auto-detection (curlie → xh → curl)
 - bx ls, bx envs, bx inspect commands
 - --dry-run, --verbose, --raw modes
 - Fuzzy request name matching

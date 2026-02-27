@@ -15,7 +15,7 @@ detect_http_client() {
     return
   fi
 
-  for client in xh curlie curl; do
+  for client in curlie xh curl; do
     if command -v "$client" &>/dev/null; then
       echo "$client"
       return

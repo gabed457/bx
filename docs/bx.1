@@ -11,7 +11,7 @@ bx \- execute Bruno API collection requests from the terminal
 .SH DESCRIPTION
 .B bx
 reads .bru files from Bruno API collections and executes HTTP requests
-using xh, curlie, or curl. It is a read-only consumer of Bruno collections
+using curlie, xh, or curl. It is a read-only consumer of Bruno collections
 and never modifies .bru files.
 .PP
 The collection root is found by walking up from the current directory
@@ -81,7 +81,7 @@ Explicit path to the Bruno collection root directory.
 Default environment name.
 .TP
 .B BX_HTTP_CLIENT
-Preferred HTTP client (xh, curlie, or curl).
+Preferred HTTP client (curlie, xh, or curl).
 .TP
 .B NO_COLOR
 When set to any value, disables colored output.

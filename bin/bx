@@ -50,7 +50,7 @@ ${BOLD}OPTIONS${RESET}
 ${BOLD}ENVIRONMENT VARIABLES${RESET}
   BX_COLLECTION       Path to Bruno collection root
   BX_ENV              Default environment name
-  BX_HTTP_CLIENT      Preferred HTTP client (xh, curlie, curl)
+  BX_HTTP_CLIENT      Preferred HTTP client (curlie, xh, curl)
   NO_COLOR            Disable all colored output
   BX_DEBUG            Enable debug output (set to 1)
 
