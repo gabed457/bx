@@ -1,0 +1,31 @@
+meta {
+  name: Multiline Body
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://httpbin.org/post
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "test",
+    "deeply": {
+      "nested": {
+        "object": {
+          "with": "many",
+          "levels": [1, 2, 3]
+        }
+      }
+    },
+    "array": [
+      {"id": 1},
+      {"id": 2}
+    ]
+  }
+}

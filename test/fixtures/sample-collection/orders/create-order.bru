@@ -1,0 +1,39 @@
+meta {
+  name: Create Order
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/orders
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "userId": {{userId}},
+    "items": [
+      {"product": "widget", "qty": 2}
+    ]
+  }
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:pre-request {
+  // This should be ignored by bx
+  const timestamp = Date.now();
+  bru.setVar("requestTime", timestamp);
+}
+
+tests {
+  test("should return 201", function() {
+    expect(res.status).to.equal(201);
+  });
+}

@@ -1,0 +1,40 @@
+meta {
+  name: With Scripts
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://httpbin.org/get
+}
+
+headers {
+  Accept: application/json
+}
+
+script:pre-request {
+  // This should be ignored by bx parser
+  const token = bru.getEnvVar("token");
+  bru.setVar("authToken", token);
+}
+
+script:post-response {
+  // This should also be ignored
+  const data = res.body;
+  bru.setVar("responseId", data.id);
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+}
+
+docs {
+  This request fetches data from httpbin.
+  It is used for testing purposes.
+}
+
+assert {
+  res.status: eq 200
+}

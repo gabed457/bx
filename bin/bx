@@ -1,0 +1,287 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.1.0"
+
+# Resolve lib directory relative to the bx binary, following symlinks
+BX_BIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
+BX_LIB="${BX_LIB_DIR:-"$BX_BIN/../lib/bx"}"
+
+# Fallback: check if lib/ is a sibling (development layout)
+if [[ ! -d "$BX_LIB" ]]; then
+  BX_LIB="$BX_BIN/../lib"
+fi
+
+for module in utils output discovery env parser client; do
+  # shellcheck source=/dev/null
+  source "$BX_LIB/${module}.sh" || { echo "error: Failed to load $module" >&2; exit 1; }
+done
+
+init_colors
+
+usage() {
+  cat <<EOF
+${BOLD}bx${RESET} ${DIM}v${VERSION}${RESET} - Bruno Execute
+
+${BOLD}USAGE${RESET}
+  bx <request> [options]
+  bx <command>
+
+${BOLD}COMMANDS${RESET}
+  ls                  List all requests in the collection
+  envs                List available environments
+  inspect <request>   Show the fully resolved request without executing
+  help                Show this help message
+  version             Print version
+  completion <shell>  Output shell completion script (bash|zsh|fish)
+
+${BOLD}OPTIONS${RESET}
+  -e, --env <name>    Use a specific environment (default: \$BX_ENV)
+  -v, --verbose       Show parsed request details before executing
+  -d, --dry-run       Print the command without executing
+  --raw               Output raw response body only
+  --curl              Force curl as the HTTP client
+  --xh                Force xh as the HTTP client
+  --curlie            Force curlie as the HTTP client
+  --no-color          Disable colored output
+  -H, --header "K: V" Add or override a header for this request
+  --var "key=val"     Override or add an environment variable
+
+${BOLD}ENVIRONMENT VARIABLES${RESET}
+  BX_COLLECTION       Path to Bruno collection root
+  BX_ENV              Default environment name
+  BX_HTTP_CLIENT      Preferred HTTP client (xh, curlie, curl)
+  NO_COLOR            Disable all colored output
+  BX_DEBUG            Enable debug output (set to 1)
+
+${BOLD}EXAMPLES${RESET}
+  bx get-user -e dev
+  bx create-order -e staging -v
+  bx ls
+  bx get-user --dry-run
+  bx inspect get-user -e dev
+  bx get-user -H "X-Custom: value" --var "userId=42"
+EOF
+  exit 0
+}
+
+inspect_request() {
+  local root="$1" request="$2"
+  shift 2
+  local -a env_vars=("$@")
+
+  local resolved_url="$BX_URL"
+  resolved_url=$(resolve_vars "$resolved_url" "${env_vars[@]}")
+
+  echo -e "${BOLD}${BX_METHOD}${RESET} ${resolved_url}"
+  echo ""
+
+  if [[ ${#BX_QUERY_PARAMS[@]} -gt 0 ]]; then
+    echo -e "${BOLD}Query Parameters:${RESET}"
+    for qp in "${BX_QUERY_PARAMS[@]}"; do
+      local qkey="${qp%%:*}"
+      local qval="${qp#*:}"
+      qval="${qval#"${qval%%[![:space:]]*}"}"
+      qval=$(resolve_vars "$qval" "${env_vars[@]}")
+      echo "  ${qkey} = ${qval}"
+    done
+    echo ""
+  fi
+
+  if [[ ${#BX_HEADERS[@]} -gt 0 || ${#BX_COLLECTION_HEADERS[@]} -gt 0 ]]; then
+    echo -e "${BOLD}Headers:${RESET}"
+    for h in "${BX_COLLECTION_HEADERS[@]}"; do
+      local hval="${h#*:}"
+      hval="${hval#"${hval%%[![:space:]]*}"}"
+      hval=$(resolve_vars "$hval" "${env_vars[@]}")
+      echo -e "  ${DIM}${h%%:*}: ${hval} (collection)${RESET}"
+    done
+    for h in "${BX_HEADERS[@]}"; do
+      local hval="${h#*:}"
+      hval="${hval#"${hval%%[![:space:]]*}"}"
+      hval=$(resolve_vars "$hval" "${env_vars[@]}")
+      echo "  ${h%%:*}: ${hval}"
+    done
+    echo ""
+  fi
+
+  if [[ "$BX_AUTH_TYPE" != "none" ]]; then
+    echo -e "${BOLD}Auth:${RESET}"
+    if [[ "$BX_AUTH_TYPE" == "bearer" ]]; then
+      local token
+      token=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]}")
+      echo "  Type: Bearer"
+      echo "  Token: ${token:0:20}..."
+    elif [[ "$BX_AUTH_TYPE" == "basic" ]]; then
+      local user
+      user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]}")
+      echo "  Type: Basic"
+      echo "  Username: ${user}"
+      echo "  Password: ****"
+    fi
+    echo ""
+  fi
+
+  if [[ -n "$BX_BODY" ]]; then
+    echo -e "${BOLD}Body (${BX_BODY_TYPE}):${RESET}"
+    local resolved_body
+    resolved_body=$(resolve_vars "$BX_BODY" "${env_vars[@]}")
+    echo "$resolved_body"
+    echo ""
+  fi
+
+  if [[ ${#BX_BODY_FORM[@]} -gt 0 ]]; then
+    echo -e "${BOLD}Body (${BX_BODY_TYPE}):${RESET}"
+    for f in "${BX_BODY_FORM[@]}"; do
+      local fkey="${f%%:*}"
+      local fval="${f#*:}"
+      fval="${fval#"${fval%%[![:space:]]*}"}"
+      fval=$(resolve_vars "$fval" "${env_vars[@]}")
+      echo "  ${fkey} = ${fval}"
+    done
+    echo ""
+  fi
+}
+
+main() {
+  local request=""
+  local env_name="${BX_ENV:-}"
+  local verbose="false"
+  local dry_run="false"
+  local raw="false"
+  local force_client=""
+  local inspect="false"
+  BX_CLI_HEADERS=()
+  local -a cli_vars=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      help|--help|-h) usage ;;
+      version|--version)
+        echo "bx v${VERSION}"
+        exit 0
+        ;;
+      ls|list)
+        local root
+        root=$(find_collection_root)
+        list_requests "$root"
+        exit 0
+        ;;
+      envs|environments)
+        local root
+        root=$(find_collection_root)
+        list_envs "$root"
+        exit 0
+        ;;
+      completion)
+        shift
+        local shell_name="${1:-}"
+        [[ -n "$shell_name" ]] || die "Usage: bx completion <bash|zsh|fish>"
+        local completion_file="$BX_BIN/../completions/bx.${shell_name}"
+        # For zsh, the file is bx.zsh
+        if [[ -f "$completion_file" ]]; then
+          cat "$completion_file"
+        else
+          die "Completion file not found for '$shell_name'. Expected: $completion_file"
+        fi
+        exit 0
+        ;;
+      inspect)
+        inspect="true"
+        ;;
+      -e|--env)
+        env_name="$2"
+        shift
+        ;;
+      -v|--verbose) verbose="true" ;;
+      -d|--dry-run) dry_run="true" ;;
+      --raw) raw="true" ;;
+      --no-color)
+        NO_COLOR=1
+        export NO_COLOR
+        init_colors
+        ;;
+      --curl) force_client="curl" ;;
+      --xh) force_client="xh" ;;
+      --curlie) force_client="curlie" ;;
+      -H|--header)
+        BX_CLI_HEADERS+=("$2")
+        shift
+        ;;
+      --var)
+        cli_vars+=("$2")
+        shift
+        ;;
+      -*)
+        die "Unknown option: $1 (run 'bx help')"
+        ;;
+      *)
+        if [[ -z "$request" ]]; then
+          request="$1"
+        else
+          die "Unexpected argument: $1"
+        fi
+        ;;
+    esac
+    shift
+  done
+
+  [[ -n "$request" ]] || usage
+
+  local root
+  root=$(find_collection_root)
+
+  local client
+  client=$(detect_http_client "$force_client")
+
+  info "collection: ${root##*/} | client: $client${env_name:+ | env: $env_name}"
+
+  local req_file
+  req_file=$(find_request_file "$root" "$request")
+  debug "request file: $req_file"
+
+  # Load environment variables (resolution order: collection → env → cli)
+  local -a env_pairs=()
+
+  # Collection-level vars
+  if [[ -f "$root/collection.bru" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && env_pairs+=("$line")
+    done < <(parse_env_file "$root/collection.bru")
+  fi
+
+  # Environment vars (override collection vars)
+  if [[ -n "$env_name" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && env_pairs+=("$line")
+    done < <(load_environment "$root" "$env_name")
+  fi
+
+  # CLI --var overrides (highest priority)
+  for v in "${cli_vars[@]}"; do
+    env_pairs+=("$v")
+  done
+
+  # Parse collection.bru for headers/auth
+  BX_COLLECTION_HEADERS=()
+  BX_COLLECTION_AUTH_TYPE="none"
+  BX_COLLECTION_AUTH_TOKEN=""
+  BX_COLLECTION_AUTH_USER=""
+  BX_COLLECTION_AUTH_PASS=""
+  if [[ -f "$root/collection.bru" ]]; then
+    parse_collection_bru "$root/collection.bru"
+  fi
+
+  # Parse the request
+  parse_bru_file "$req_file"
+
+  if [[ "$inspect" == "true" ]]; then
+    inspect_request "$root" "$request" "${env_pairs[@]}"
+    exit 0
+  fi
+
+  # Execute
+  execute_request "$client" "$dry_run" "$verbose" "$raw" "${env_pairs[@]}"
+}
+
+main "$@"

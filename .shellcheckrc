@@ -1,0 +1,4 @@
+# Allow "useless cat" for readability in pipelines
+disable=SC2002
+# Source paths
+source-path=lib/

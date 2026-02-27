@@ -1,0 +1,25 @@
+{
+  "name": "brunox",
+  "version": "0.1.0",
+  "description": "Terminal-first CLI for executing Bruno API collections",
+  "keywords": ["bruno", "api", "cli", "http", "rest", "terminal"],
+  "bin": {
+    "bx": "bin/bx"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "completions/",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gabed457/bx"
+  },
+  "license": "MIT",
+  "os": ["darwin", "linux"],
+  "engines": {
+    "node": ">=14"
+  }
+}

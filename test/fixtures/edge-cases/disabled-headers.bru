@@ -1,0 +1,17 @@
+meta {
+  name: Disabled Headers
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://httpbin.org/get
+}
+
+headers {
+  Accept: application/json
+  ~X-Disabled: this-should-be-skipped
+  // This is a comment
+  X-Enabled: this-should-be-included
+  ~Another-Disabled: also-skipped
+}

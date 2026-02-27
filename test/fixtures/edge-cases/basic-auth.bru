@@ -1,0 +1,14 @@
+meta {
+  name: Basic Auth
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://httpbin.org/basic-auth/user/pass
+}
+
+auth:basic {
+  username: {{user}}
+  password: {{pass}}
+}
