@@ -1,0 +1,28 @@
+meta {
+  name: GraphQL Query
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://httpbin.org/post
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:graphql {
+  query {
+    users(limit: $limit) {
+      id
+      name
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "limit": 10
+  }
+}

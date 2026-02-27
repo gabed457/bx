@@ -1,0 +1,23 @@
+meta {
+  name: Get User
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users/{{userId}}
+}
+
+headers {
+  Accept: application/json
+  X-Request-Id: req-001
+}
+
+params:query {
+  include: profile
+  ~excluded: skip-this
+}
+
+auth:bearer {
+  token: {{token}}
+}

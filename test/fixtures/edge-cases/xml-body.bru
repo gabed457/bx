@@ -1,0 +1,20 @@
+meta {
+  name: XML Body
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://httpbin.org/post
+}
+
+headers {
+  Content-Type: application/xml
+}
+
+body:xml {
+  <user>
+    <name>Test User</name>
+    <email>test@example.com</email>
+  </user>
+}

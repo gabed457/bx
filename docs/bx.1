@@ -1,0 +1,132 @@
+.TH BX 1 "February 2026" "bx v0.1.0" "User Commands"
+.SH NAME
+bx \- execute Bruno API collection requests from the terminal
+.SH SYNOPSIS
+.B bx
+.I request
+.RI [ options ]
+.br
+.B bx
+.I command
+.SH DESCRIPTION
+.B bx
+reads .bru files from Bruno API collections and executes HTTP requests
+using curlie, xh, or curl. It is a read-only consumer of Bruno collections
+and never modifies .bru files.
+.PP
+The collection root is found by walking up from the current directory
+looking for a
+.I bruno.json
+file, or by setting the
+.B BX_COLLECTION
+environment variable.
+.SH COMMANDS
+.TP
+.B ls
+List all requests in the collection, color-coded by HTTP method.
+.TP
+.B envs
+List available environments with variable counts.
+.TP
+.BI inspect " request"
+Show the fully resolved request (method, URL, headers, body, auth)
+without executing it.
+.TP
+.B help
+Show help text.
+.TP
+.B version
+Print version string.
+.TP
+.BI completion " shell"
+Output shell completion script for bash, zsh, or fish.
+.SH OPTIONS
+.TP
+.BI \-e " name" "\fR, \fB\-\-env" " name"
+Use a specific environment. Overrides
+.BR BX_ENV .
+.TP
+.BR \-v ", " \-\-verbose
+Show the parsed, resolved request before executing.
+.TP
+.BR \-d ", " \-\-dry\-run
+Print the shell command that would be executed without running it.
+.TP
+.B \-\-raw
+Output raw response body only. Ideal for piping to jq.
+.TP
+.B \-\-xh
+Force xh as the HTTP client.
+.TP
+.B \-\-curlie
+Force curlie as the HTTP client.
+.TP
+.B \-\-curl
+Force curl as the HTTP client.
+.TP
+.B \-\-no\-color
+Disable colored output.
+.TP
+.BI \-H " \(dqKey: Value\(dq" "\fR, \fB\-\-header" " \(dqKey: Value\(dq"
+Add or override a header for this request. May be specified multiple times.
+.TP
+.BI \-\-var " \(dqkey=val\(dq"
+Override or add an environment variable for this request. May be specified multiple times.
+.SH ENVIRONMENT
+.TP
+.B BX_COLLECTION
+Explicit path to the Bruno collection root directory.
+.TP
+.B BX_ENV
+Default environment name.
+.TP
+.B BX_HTTP_CLIENT
+Preferred HTTP client (curlie, xh, or curl).
+.TP
+.B NO_COLOR
+When set to any value, disables colored output.
+.TP
+.B BX_DEBUG
+When set to 1, enables debug output.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+General error (bad arguments, file not found, parse failure).
+.TP
+.B 2
+No Bruno collection found.
+.TP
+.B 3
+Ambiguous request match.
+.TP
+.B 4
+HTTP client not found.
+.SH EXAMPLES
+.TP
+List all requests:
+.B bx ls
+.TP
+Execute a request with the dev environment:
+.B bx get-user -e dev
+.TP
+Dry-run to see the curl command:
+.B bx get-user -e dev --dry-run --curl
+.TP
+Pipe raw output to jq:
+.B bx get-user -e dev --raw | jq .email
+.TP
+Override a variable:
+.B bx get-user -e dev --var "userId=42"
+.SH SEE ALSO
+.BR curl (1),
+.BR xh (1),
+.BR jq (1)
+.PP
+Bruno: https://www.usebruno.com/
+.SH AUTHORS
+bx contributors
+.SH LICENSE
+MIT License

@@ -1,0 +1,19 @@
+meta {
+  name: Put Request
+  type: http
+  seq: 1
+}
+
+put {
+  url: https://httpbin.org/put
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "updated"
+  }
+}

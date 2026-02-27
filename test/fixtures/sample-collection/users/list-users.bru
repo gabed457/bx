@@ -1,0 +1,18 @@
+meta {
+  name: List Users
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/users
+}
+
+headers {
+  Accept: application/json
+}
+
+params:query {
+  page: 1
+  limit: {{pageSize}}
+}

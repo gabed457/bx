@@ -1,0 +1,17 @@
+meta {
+  name: Query Block
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://httpbin.org/get
+}
+
+query {
+  page: 1
+  limit: 10
+  ~disabled: skip
+  // comment
+  search: test value
+}

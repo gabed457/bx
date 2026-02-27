@@ -1,0 +1,19 @@
+meta {
+  name: Patch Request
+  type: http
+  seq: 1
+}
+
+patch {
+  url: https://httpbin.org/patch
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "patched"
+  }
+}

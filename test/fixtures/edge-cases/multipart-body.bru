@@ -1,0 +1,14 @@
+meta {
+  name: Multipart Body
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://httpbin.org/post
+}
+
+body:multipart-form {
+  field1: value1
+  file1: @/path/to/file.png
+}
