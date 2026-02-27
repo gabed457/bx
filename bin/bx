@@ -71,7 +71,7 @@ inspect_request() {
   local -a env_vars=("$@")
 
   local resolved_url="$BX_URL"
-  resolved_url=$(resolve_vars "$resolved_url" "${env_vars[@]}")
+  resolved_url=$(resolve_vars "$resolved_url" "${env_vars[@]+"${env_vars[@]}"}")
 
   echo -e "${BOLD}${BX_METHOD}${RESET} ${resolved_url}"
   echo ""
@@ -82,7 +82,7 @@ inspect_request() {
       local qkey="${qp%%:*}"
       local qval="${qp#*:}"
       qval="${qval#"${qval%%[![:space:]]*}"}"
-      qval=$(resolve_vars "$qval" "${env_vars[@]}")
+      qval=$(resolve_vars "$qval" "${env_vars[@]+"${env_vars[@]}"}")
       echo "  ${qkey} = ${qval}"
     done
     echo ""
@@ -90,16 +90,16 @@ inspect_request() {
 
   if [[ ${#BX_HEADERS[@]} -gt 0 || ${#BX_COLLECTION_HEADERS[@]} -gt 0 ]]; then
     echo -e "${BOLD}Headers:${RESET}"
-    for h in "${BX_COLLECTION_HEADERS[@]}"; do
+    for h in "${BX_COLLECTION_HEADERS[@]+"${BX_COLLECTION_HEADERS[@]}"}"; do
       local hval="${h#*:}"
       hval="${hval#"${hval%%[![:space:]]*}"}"
-      hval=$(resolve_vars "$hval" "${env_vars[@]}")
+      hval=$(resolve_vars "$hval" "${env_vars[@]+"${env_vars[@]}"}")
       echo -e "  ${DIM}${h%%:*}: ${hval} (collection)${RESET}"
     done
-    for h in "${BX_HEADERS[@]}"; do
+    for h in "${BX_HEADERS[@]+"${BX_HEADERS[@]}"}"; do
       local hval="${h#*:}"
       hval="${hval#"${hval%%[![:space:]]*}"}"
-      hval=$(resolve_vars "$hval" "${env_vars[@]}")
+      hval=$(resolve_vars "$hval" "${env_vars[@]+"${env_vars[@]}"}")
       echo "  ${h%%:*}: ${hval}"
     done
     echo ""
@@ -109,12 +109,12 @@ inspect_request() {
     echo -e "${BOLD}Auth:${RESET}"
     if [[ "$BX_AUTH_TYPE" == "bearer" ]]; then
       local token
-      token=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]}")
+      token=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]+"${env_vars[@]}"}")
       echo "  Type: Bearer"
       echo "  Token: [REDACTED]"
     elif [[ "$BX_AUTH_TYPE" == "basic" ]]; then
       local user
-      user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]}")
+      user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]+"${env_vars[@]}"}")
       echo "  Type: Basic"
       echo "  Username: ${user}"
       echo "  Password: ****"
@@ -125,7 +125,7 @@ inspect_request() {
   if [[ -n "$BX_BODY" ]]; then
     echo -e "${BOLD}Body (${BX_BODY_TYPE}):${RESET}"
     local resolved_body
-    resolved_body=$(resolve_vars "$BX_BODY" "${env_vars[@]}")
+    resolved_body=$(resolve_vars "$BX_BODY" "${env_vars[@]+"${env_vars[@]}"}")
     echo "$resolved_body"
     echo ""
   fi
@@ -136,7 +136,7 @@ inspect_request() {
       local fkey="${f%%:*}"
       local fval="${f#*:}"
       fval="${fval#"${fval%%[![:space:]]*}"}"
-      fval=$(resolve_vars "$fval" "${env_vars[@]}")
+      fval=$(resolve_vars "$fval" "${env_vars[@]+"${env_vars[@]}"}")
       echo "  ${fkey} = ${fval}"
     done
     echo ""
@@ -261,7 +261,7 @@ main() {
   fi
 
   # CLI --var overrides (highest priority)
-  for v in "${cli_vars[@]}"; do
+  for v in "${cli_vars[@]+"${cli_vars[@]}"}"; do
     env_pairs+=("$v")
   done
 
@@ -284,12 +284,12 @@ main() {
   parse_bru_file "$req_file"
 
   if [[ "$inspect" == "true" ]]; then
-    inspect_request "$root" "$request" "${env_pairs[@]}"
+    inspect_request "$root" "$request" "${env_pairs[@]+"${env_pairs[@]}"}"
     exit 0
   fi
 
   # Execute
-  execute_request "$client" "$dry_run" "$verbose" "$raw" "${env_pairs[@]}"
+  execute_request "$client" "$dry_run" "$verbose" "$raw" "${env_pairs[@]+"${env_pairs[@]}"}"
 }
 
 main "$@"

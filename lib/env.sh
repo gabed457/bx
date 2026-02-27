@@ -47,13 +47,15 @@ resolve_vars() {
     local val="${kv#*=}"
     local found=false
     local i
-    for i in "${!var_keys[@]}"; do
-      if [[ "${var_keys[$i]}" == "$key" ]]; then
-        var_vals[i]="$val"
-        found=true
-        break
-      fi
-    done
+    if [[ ${#var_keys[@]} -gt 0 ]]; then
+      for i in "${!var_keys[@]}"; do
+        if [[ "${var_keys[$i]}" == "$key" ]]; then
+          var_vals[i]="$val"
+          found=true
+          break
+        fi
+      done
+    fi
     if [[ "$found" == false ]]; then
       var_keys+=("$key")
       var_vals+=("$val")
@@ -62,9 +64,11 @@ resolve_vars() {
 
   # Apply resolved values
   local i
-  for i in "${!var_keys[@]}"; do
-    text="${text//\{\{${var_keys[$i]}\}\}/${var_vals[$i]}}"
-  done
+  if [[ ${#var_keys[@]} -gt 0 ]]; then
+    for i in "${!var_keys[@]}"; do
+      text="${text//\{\{${var_keys[$i]}\}\}/${var_vals[$i]}}"
+    done
+  fi
 
   # Warn about unresolved variables
   local remaining

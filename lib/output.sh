@@ -48,7 +48,7 @@ print_request() {
 
   echo "" >&2
   echo -e "${BOLD}${method}${RESET} ${url}" >&2
-  for h in "${headers[@]}"; do
+  for h in "${headers[@]+"${headers[@]}"}"; do
     echo -e "  ${DIM}${h}${RESET}" >&2
   done
   if [[ -n "$bearer" ]]; then

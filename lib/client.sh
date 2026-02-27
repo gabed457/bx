@@ -50,7 +50,7 @@ build_xh_cmd() {
     cmd=(xh --print=hHbB "$method" "$url")
   fi
 
-  for h in "${resolved_headers[@]}"; do
+  for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
     cmd+=("${h%%:*}:${h#*: }")
   done
   if [[ -n "$bearer" ]]; then
@@ -62,7 +62,7 @@ build_xh_cmd() {
   if [[ -n "$body" ]]; then
     cmd+=(--raw "$body")
   fi
-  for f in "${resolved_form[@]}"; do
+  for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
     cmd+=("$f")
   done
 
@@ -94,7 +94,7 @@ build_curlie_cmd() {
     cmd=(curlie -X "$method" "$url")
   fi
 
-  for h in "${resolved_headers[@]}"; do
+  for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
     cmd+=(-H "$h")
   done
   if [[ -n "$bearer" ]]; then
@@ -106,7 +106,7 @@ build_curlie_cmd() {
   if [[ -n "$body" ]]; then
     cmd+=(-d "$body")
   fi
-  for f in "${resolved_form[@]}"; do
+  for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
     cmd+=(--data-urlencode "$f")
   done
 
@@ -138,7 +138,7 @@ build_curl_cmd() {
     cmd=(curl -s -i -X "$method" "$url")
   fi
 
-  for h in "${resolved_headers[@]}"; do
+  for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
     cmd+=(-H "$h")
   done
   if [[ -n "$bearer" ]]; then
@@ -150,7 +150,7 @@ build_curl_cmd() {
   if [[ -n "$body" ]]; then
     cmd+=(-d "$body")
   fi
-  for f in "${resolved_form[@]}"; do
+  for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
     cmd+=(--data-urlencode "$f")
   done
 
@@ -164,7 +164,7 @@ execute_request() {
 
   # Resolve URL
   local resolved_url="$BX_URL"
-  resolved_url=$(resolve_vars "$resolved_url" "${env_vars[@]}")
+  resolved_url=$(resolve_vars "$resolved_url" "${env_vars[@]+"${env_vars[@]}"}")
 
   # Append query params
   if [[ ${#BX_QUERY_PARAMS[@]} -gt 0 ]]; then
@@ -174,8 +174,8 @@ execute_request() {
       local qkey="${qp%%:*}"
       local qval="${qp#*:}"
       qval="${qval#"${qval%%[![:space:]]*}"}"
-      qkey=$(resolve_vars "$qkey" "${env_vars[@]}")
-      qval=$(resolve_vars "$qval" "${env_vars[@]}")
+      qkey=$(resolve_vars "$qkey" "${env_vars[@]+"${env_vars[@]}"}")
+      qval=$(resolve_vars "$qval" "${env_vars[@]+"${env_vars[@]}"}")
       resolved_url="${resolved_url}${sep}${qkey}=${qval}"
       sep="&"
     done
@@ -184,23 +184,23 @@ execute_request() {
   # Resolve body
   local resolved_body=""
   if [[ -n "$BX_BODY" ]]; then
-    resolved_body=$(resolve_vars "$BX_BODY" "${env_vars[@]}")
+    resolved_body=$(resolve_vars "$BX_BODY" "${env_vars[@]+"${env_vars[@]}"}")
   fi
 
   # Resolve auth
   local resolved_bearer=""
   if [[ "$BX_AUTH_TYPE" == "bearer" ]]; then
-    resolved_bearer=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]}")
+    resolved_bearer=$(resolve_vars "$BX_AUTH_TOKEN" "${env_vars[@]+"${env_vars[@]}"}")
   elif [[ "$BX_AUTH_TYPE" == "none" && "${BX_COLLECTION_AUTH_TYPE:-none}" == "bearer" ]]; then
-    resolved_bearer=$(resolve_vars "${BX_COLLECTION_AUTH_TOKEN:-}" "${env_vars[@]}")
+    resolved_bearer=$(resolve_vars "${BX_COLLECTION_AUTH_TOKEN:-}" "${env_vars[@]+"${env_vars[@]}"}")
   fi
   local resolved_basic_user="" resolved_basic_pass=""
   if [[ "$BX_AUTH_TYPE" == "basic" ]]; then
-    resolved_basic_user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]}")
-    resolved_basic_pass=$(resolve_vars "$BX_AUTH_PASS" "${env_vars[@]}")
+    resolved_basic_user=$(resolve_vars "$BX_AUTH_USER" "${env_vars[@]+"${env_vars[@]}"}")
+    resolved_basic_pass=$(resolve_vars "$BX_AUTH_PASS" "${env_vars[@]+"${env_vars[@]}"}")
   elif [[ "$BX_AUTH_TYPE" == "none" && "${BX_COLLECTION_AUTH_TYPE:-none}" == "basic" ]]; then
-    resolved_basic_user=$(resolve_vars "${BX_COLLECTION_AUTH_USER:-}" "${env_vars[@]}")
-    resolved_basic_pass=$(resolve_vars "${BX_COLLECTION_AUTH_PASS:-}" "${env_vars[@]}")
+    resolved_basic_user=$(resolve_vars "${BX_COLLECTION_AUTH_USER:-}" "${env_vars[@]+"${env_vars[@]}"}")
+    resolved_basic_pass=$(resolve_vars "${BX_COLLECTION_AUTH_PASS:-}" "${env_vars[@]+"${env_vars[@]}"}")
   fi
 
   # Resolve headers — merge collection headers with request headers (Bash 3.2 compatible)
@@ -212,12 +212,14 @@ execute_request() {
     local hkey_lower
     hkey_lower=$(echo "$hkey" | tr '[:upper:]' '[:lower:]')
     local i
-    for i in "${!hdr_keys[@]}"; do
-      if [[ "${hdr_keys[$i]}" == "$hkey_lower" ]]; then
-        hdr_vals[i]="${hkey}: ${hval}"
-        return
-      fi
-    done
+    if [[ ${#hdr_keys[@]} -gt 0 ]]; then
+      for i in "${!hdr_keys[@]}"; do
+        if [[ "${hdr_keys[$i]}" == "$hkey_lower" ]]; then
+          hdr_vals[i]="${hkey}: ${hval}"
+          return
+        fi
+      done
+    fi
     hdr_keys+=("$hkey_lower")
     hdr_vals+=("${hkey}: ${hval}")
   }
@@ -228,45 +230,47 @@ execute_request() {
       local hkey="${h%%:*}"
       local hval="${h#*:}"
       hval="${hval#"${hval%%[![:space:]]*}"}"
-      hval=$(resolve_vars "$hval" "${env_vars[@]}")
+      hval=$(resolve_vars "$hval" "${env_vars[@]+"${env_vars[@]}"}")
       _merge_header "$hkey" "$hval"
     done
   fi
 
   # Request headers override collection headers
-  for h in "${BX_HEADERS[@]}"; do
+  for h in "${BX_HEADERS[@]+"${BX_HEADERS[@]}"}"; do
     local hkey="${h%%:*}"
     local hval="${h#*:}"
     hval="${hval#"${hval%%[![:space:]]*}"}"
-    hval=$(resolve_vars "$hval" "${env_vars[@]}")
+    hval=$(resolve_vars "$hval" "${env_vars[@]+"${env_vars[@]}"}")
     _merge_header "$hkey" "$hval"
   done
 
   # CLI --header overrides
-  for h in "${BX_CLI_HEADERS[@]}"; do
+  for h in "${BX_CLI_HEADERS[@]+"${BX_CLI_HEADERS[@]}"}"; do
     local hkey="${h%%:*}"
     local hval="${h#*:}"
     hval="${hval#"${hval%%[![:space:]]*}"}"
     _merge_header "$hkey" "$hval"
   done
 
-  for i in "${!hdr_vals[@]}"; do
-    resolved_headers+=("${hdr_vals[$i]}")
-  done
+  if [[ ${#hdr_vals[@]} -gt 0 ]]; then
+    for i in "${!hdr_vals[@]}"; do
+      resolved_headers+=("${hdr_vals[$i]}")
+    done
+  fi
 
   # Resolve form data
   local -a resolved_form=()
-  for f in "${BX_BODY_FORM[@]}"; do
+  for f in "${BX_BODY_FORM[@]+"${BX_BODY_FORM[@]}"}"; do
     local fkey="${f%%:*}"
     local fval="${f#*:}"
     fval="${fval#"${fval%%[![:space:]]*}"}"
-    fval=$(resolve_vars "$fval" "${env_vars[@]}")
+    fval=$(resolve_vars "$fval" "${env_vars[@]+"${env_vars[@]}"}")
     resolved_form+=("${fkey}=${fval}")
   done
 
   # Build command args for the builder
   local -a builder_args=()
-  for h in "${resolved_headers[@]}"; do
+  for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do
     builder_args+=(--header "$h")
   done
   if [[ -n "$resolved_body" ]]; then
@@ -278,16 +282,16 @@ execute_request() {
   if [[ -n "$resolved_basic_user" ]]; then
     builder_args+=(--basic-user "$resolved_basic_user" --basic-pass "$resolved_basic_pass")
   fi
-  for f in "${resolved_form[@]}"; do
+  for f in "${resolved_form[@]+"${resolved_form[@]}"}"; do
     builder_args+=(--form "$f")
   done
 
   # Build command array
   local cmd_str
   case "$client" in
-    xh)     cmd_str=$(build_xh_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]}") ;;
-    curlie) cmd_str=$(build_curlie_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]}") ;;
-    curl)   cmd_str=$(build_curl_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]}") ;;
+    xh)     cmd_str=$(build_xh_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
+    curlie) cmd_str=$(build_curlie_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
+    curl)   cmd_str=$(build_curl_cmd "$BX_METHOD" "$resolved_url" "$raw" "${builder_args[@]+"${builder_args[@]}"}") ;;
   esac
 
   # Parse null-delimited string into array
@@ -299,10 +303,10 @@ execute_request() {
   # Verbose / dry-run output
   if [[ "$verbose" == "true" || "$dry_run" == "true" ]]; then
     local -a print_args=()
-    for h in "${resolved_headers[@]}"; do print_args+=(--header "$h"); done
+    for h in "${resolved_headers[@]+"${resolved_headers[@]}"}"; do print_args+=(--header "$h"); done
     [[ -n "$resolved_bearer" ]] && print_args+=(--bearer "$resolved_bearer")
     [[ -n "$resolved_body" ]] && print_args+=(--body "$resolved_body")
-    print_request "$BX_METHOD" "$resolved_url" "${print_args[@]}"
+    print_request "$BX_METHOD" "$resolved_url" "${print_args[@]+"${print_args[@]}"}"
   fi
 
   if [[ "$dry_run" == "true" ]]; then
