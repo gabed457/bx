@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 # Resolve lib directory relative to the bx binary, following symlinks
 BX_BIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
@@ -24,10 +24,11 @@ usage() {
 ${BOLD}bx${RESET} ${DIM}v${VERSION}${RESET} - Bruno Execute
 
 ${BOLD}USAGE${RESET}
-  bx <request> [options]
+  bx [run] <request> [options]
   bx <command>
 
 ${BOLD}COMMANDS${RESET}
+  run <request>       Run a request (default command)
   ls                  List all requests in the collection
   envs                List available environments
   inspect <request>   Show the fully resolved request without executing
@@ -188,6 +189,9 @@ main() {
         ;;
       inspect)
         inspect="true"
+        ;;
+      run)
+        # Explicit run command — default behavior, just continue parsing
         ;;
       -e|--env)
         [[ $# -ge 2 ]] || die "Option $1 requires a value"

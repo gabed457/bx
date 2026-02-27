@@ -6,7 +6,7 @@ _bx_completions() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  commands="ls envs inspect help version completion"
+  commands="ls envs inspect run help version completion"
   flags="--env -e --verbose -v --dry-run -d --raw --xh --curlie --curl --no-color --header -H --var"
 
   # After -e / --env, complete environment names

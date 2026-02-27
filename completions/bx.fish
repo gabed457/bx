@@ -42,6 +42,7 @@ end
 complete -c bx -n __bx_needs_command -a ls -d 'List all requests'
 complete -c bx -n __bx_needs_command -a envs -d 'List environments'
 complete -c bx -n __bx_needs_command -a inspect -d 'Show resolved request'
+complete -c bx -n __bx_needs_command -a run -d 'Run a request'
 complete -c bx -n __bx_needs_command -a help -d 'Show help'
 complete -c bx -n __bx_needs_command -a version -d 'Print version'
 complete -c bx -n __bx_needs_command -a completion -d 'Output completion script'

@@ -72,6 +72,15 @@ test_integration_var_override() {
   assert_contains "$output" "999" "var override applied"
 }
 
+# -- Run subcommand --
+
+test_integration_run_subcommand() {
+  local output
+  output=$(BX_COLLECTION="$SAMPLE" "$BX" run get-user -e dev --dry-run --curl 2>&1)
+  assert_contains "$output" "curl" "run subcommand shows curl command"
+  assert_contains "$output" "https://api.dev.example.com" "run subcommand resolves URL"
+}
+
 # -- Header override --
 
 test_integration_header_override() {

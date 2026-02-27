@@ -37,6 +37,7 @@ _bx() {
     'ls:List all requests in the collection'
     'envs:List available environments'
     'inspect:Show the fully resolved request without executing'
+    'run:Run a request (default command)'
     'help:Show help message'
     'version:Print version'
     'completion:Output shell completion script'
