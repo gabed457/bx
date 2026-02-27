@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.2"
+VERSION="0.1.3"
 
 # Resolve lib directory relative to the bx binary, following symlinks
 BX_BIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
@@ -12,7 +12,7 @@ if [[ ! -d "$BX_LIB" ]]; then
   BX_LIB="$BX_BIN/../lib"
 fi
 
-for module in utils output discovery env parser client; do
+for module in utils output discovery env parser client secrets; do
   # shellcheck source=/dev/null
   source "$BX_LIB/${module}.sh" || { echo "error: Failed to load $module" >&2; exit 1; }
 done
@@ -262,6 +262,13 @@ main() {
     while IFS= read -r line; do
       [[ -n "$line" ]] && env_pairs+=("$line")
     done < <(load_environment "$root" "$env_name")
+  fi
+
+  # Bruno Desktop encrypted secrets (override env file values for secret vars)
+  if [[ -n "$env_name" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && env_pairs+=("$line")
+    done < <(load_secrets "$root" "$env_name")
   fi
 
   # Parse collection.bru for headers/auth

@@ -88,3 +88,14 @@ test_integration_header_override() {
   output=$(BX_COLLECTION="$SAMPLE" "$BX" get-user -e dev --dry-run --curl -H "X-Custom: test" 2>&1)
   assert_contains "$output" "X-Custom" "header override in command"
 }
+
+# -- No-secrets regression --
+
+test_integration_no_secrets_file() {
+  local output
+  local rc=0
+  output=$(BX_COLLECTION="$SAMPLE" BX_SECRETS_FILE="/nonexistent/secrets.json" \
+    "$BX" get-user -e dev --dry-run --curl 2>&1) || rc=$?
+  assert_eq "0" "$rc" "bx succeeds without secrets.json"
+  assert_contains "$output" "curl" "dry-run works without secrets.json"
+}
